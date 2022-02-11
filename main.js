@@ -39,6 +39,7 @@
         this.board = board;
         this.kind = "rectangle";
         this.board.bars.push(this);
+        this.speed = 10;
     }
 
     self.Bar.prototype = {
@@ -46,13 +47,16 @@
          * Desplaza la barra hacia arriba
          */
         down: function () {
-
+            this.y += this.speed;
         },
         /**
          * Desplaza la barra hacia abajo
          */
         up: function () {
-
+            this.y -= this.speed;
+        },
+        toString: function () {
+            return "x: " + this.x + " y: " + this.y;
         }
     }
 })();
@@ -100,18 +104,37 @@
 })();
 
 window.addEventListener("load", main);
+// Captura las teclas presionadas
+document.addEventListener("keydown", function (ev) {
+    console.log(ev.keyCode);
+    if (ev.keyCode === 87) {
+        bar1.up();      
+    } else if (ev.keyCode === 83) {
+        bar1.down();
+    } else if (ev.keyCode === 38) {
+        bar2.up();
+    } else if (ev.keyCode === 40) {
+        bar2.down();
+    }
+});
+
+var bar1;
+var bar2;
+var canvas;
+var board;
+var board_view;
 
 function main() {
-    var board = new Board(600, 600);
+    board = new Board(600, 600);
 
     let bar_height = 100;
     let bar_width = 40;
-    let bar_y = board.height / 2 - bar_height;
+    let bar_y = board.height / 2 - bar_height / 2;
     let bar_x = board.width - bar_width * 2;
-    var bar1 = new Bar(bar_width, bar_y, bar_width, bar_height, board);
-    var bar2 = new Bar(bar_x, bar_y, bar_width, bar_height, board);
+    bar1 = new Bar(bar_width, bar_y, bar_width, bar_height, board);
+    bar2 = new Bar(bar_x, bar_y, bar_width, bar_height, board);
 
-    var canvas = document.getElementById("canvas");
-    var board_view = new BoardView(canvas, board);
+    canvas = document.getElementById("canvas");
+    board_view = new BoardView(canvas, board);
     board_view.draw();
 } 
