@@ -12,6 +12,7 @@
         this.game_over = false;
         this.paddles = [];
         this.ball = null;
+        this.playing = false;
     }
 
     self.Board.prototype = {
@@ -44,7 +45,7 @@
         draw: function () {
             for (var i = this.board.elements.length - 1; i >= 0; i--) {
                 var elm = this.board.elements[i];
-                
+
                 draw(this.ctx, elm);
             };
         },
@@ -58,8 +59,12 @@
          * Lógica del juego
          */
         play: function () {
-            this.clean();
-            this.draw();
+            if (this.board.playing) {
+                this.clean();
+                this.draw();
+                this.board.ball.move();
+            }
+
         }
     }
 
@@ -140,6 +145,14 @@
         this.board = board;
         board.ball = this;
         this.kind = "circle";
+        this.direciton = 1;
+    }
+
+    self.Ball.prototype = {
+        move: function () {
+            this.x += this.speed_x * this.direciton;
+            this.y += this.speed_y * this.direciton;
+        }
     }
 })();
 
@@ -160,27 +173,39 @@ function main() {
     let paddle_width = 20;
     let paddle_x = board.width - paddle_width * 2;
     let paddle_y = board.height / 2 - paddle_height / 2;
-
     paddle_1 = new Paddle(paddle_width * 2, paddle_y, paddle_width, paddle_height, board);
     paddle_2 = new Paddle(paddle_x, paddle_y, paddle_width, paddle_height, board);
 
     let ball_radius = 10;
     var ball = new Ball(board.width / 2 - ball_radius, board.height / 2 - ball_radius, ball_radius, board)
 
+    board_view.draw();
     controller();
 }
 
 // Captura de teclas presionadas    
 document.addEventListener("keydown", function (ev) {
-    ev.preventDefault();
-    if (ev.keyCode === 87) {
-        paddle_1.up();
-    } else if (ev.keyCode === 83) {
-        paddle_1.down();
-    } else if (ev.keyCode === 38) {
-        paddle_2.up();
-    } else if (ev.keyCode === 40) {
-        paddle_2.down();
+
+    console.log(ev.keyCode)
+    
+    if (ev.keyCode === 32) {
+        ev.preventDefault();
+        board.playing = !board.playing;
+    } else if (board.playing){
+        if (ev.keyCode === 87) {
+            ev.preventDefault();
+            paddle_1.up();
+        } else if (ev.keyCode === 83) {
+            ev.preventDefault();
+            paddle_1.down();
+            ev.preventDefault();
+        } else if (ev.keyCode === 38) {
+            ev.preventDefault();
+            paddle_2.up();
+        } else if (ev.keyCode === 40) {
+            ev.preventDefault();
+            paddle_2.down();
+        }
     }
 });
 
