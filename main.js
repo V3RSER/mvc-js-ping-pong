@@ -69,7 +69,7 @@
         check_collisions: function () {
             for (let index = this.board.paddles.length - 1; index >= 0; index--) {
                 let paddle = this.board.paddles[index];
-                if (hit(paddle, this.board.ball)) {
+                if (hit(paddle, this.board.ball.collider)) {
                     this.board.ball.collision(paddle)
                 }
             };
@@ -176,6 +176,7 @@
         this.x = x;
         this.y = y;
         this.radius = radius;
+        this.collider = new Collider(this);
         this.speed_y = 0;
         this.speed_x = 3;
         this.speed = this.speed_x + this.speed_y;
@@ -203,14 +204,28 @@
             } else {
                 this.direction = 1;
             }
-        },
-        get width() {
-            return this.radius * 1.1;
-        },
-        get height() {
-            return this.radius * 1.1;
         }
     }
+
+    self.Collider = function(ball) {
+        this.ball = ball;
+    }
+    
+    self.Collider.prototype = {
+        get width() {
+            return this.ball.radius * 2.1
+        },
+        get height() {
+            return this.ball.radius * 2.1
+        },
+        get x() {
+            return this.ball.x - this.ball.radius
+        },
+        get y() {
+            return this.ball.y - this.ball.radius
+        }
+    }
+
 })();
 
 // Inicialización de variables
