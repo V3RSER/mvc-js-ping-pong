@@ -16,7 +16,7 @@
 
     self.Board.prototype = {
         get elements() {
-            let elements = this.paddles;
+            let elements = this.paddles.map(function (paddle) { return paddle; });
             elements.push(this.ball);
             return elements
         }
@@ -187,6 +187,7 @@ document.addEventListener("keydown", function (ev) {
 // Actualización de la ventana del juego
 window.requestAnimationFrame(controller);
 function controller() {
-    board_view.play();
+    if (board_view != undefined)
+        board_view.play();
     window.requestAnimationFrame(controller);
 }
