@@ -11,13 +11,15 @@
         this.playing = false;
         this.game_over = false;
         this.paddles = [];
+        this.limits = [];
         this.ball = null;
-        this.playing = false;
     }
 
     self.Board.prototype = {
         get elements() {
-            let elements = this.paddles.map(function (paddle) { return paddle; });
+            let pad = this.paddles.map(function (paddle) { return paddle; })
+            let lim = this.limits.map(function (limit) { return limit; });
+            let elements = pad.concat(lim);
             elements.push(this.ball);
             return elements
         }
@@ -70,7 +72,13 @@
             for (let index = this.board.paddles.length - 1; index >= 0; index--) {
                 let paddle = this.board.paddles[index];
                 if (hit(paddle, this.board.ball.collider)) {
-                    this.board.ball.collision(paddle)
+                    this.board.ball.collision_paddle(paddle);
+                }
+            };
+            for (let index = this.board.limits.length - 1; index >= 0; index--) {
+                let limit = this.board.limits[index];
+                if (hit(limit, this.board.ball.collider)) {
+                    this.board.ball.collision_limit(limit);
                 }
             };
         }
@@ -84,7 +92,11 @@
     function draw(ctx, element) {
         switch (element.kind) {
             case "rectangle":
+                ctx.fillStyle = element.color;
+                ctx.globalAlpha = element.opacity;
                 ctx.fillRect(element.x, element.y, element.width, element.height);
+                ctx.fillStyle = "#000000";
+                ctx.globalAlpha = 1;
                 break;
             case "circle":
                 ctx.beginPath();
@@ -97,26 +109,28 @@
 
     /**
      * Comprueba que dos elementos tienen una colisión
-     * @param {*} elemento_1 
-     * @param {*} elemento_2 
+     * @param {*} element_1 
+     * @param {*} element_2 
      * @returns Boolean
      */
-    function hit(elemento_1, elemento_2) {
+    function hit(element_1, element_2) {
         let hit = false;
 
-        if (elemento_2.x + elemento_2.width >= elemento_1.x && elemento_2.x < elemento_1.x + elemento_1.width) {
-            if (elemento_2.y + elemento_2.height >= elemento_1.y && elemento_2.y < elemento_1.y + elemento_1.height)
+        if (element_2.x + element_2.width >= element_1.x && element_2.x < element_1.x + element_1.width) {
+            if (element_2.y + element_2.height >= element_1.y && element_2.y < element_1.y + element_1.height) {
                 hit = true;
+            }
+
         }
 
-        if (elemento_2.x <= elemento_1.x && elemento_2.x + elemento_2.width >= elemento_1.x + elemento_1.width) {
-            if (elemento_2.y <= elemento_1.y && elemento_2.y + elemento_2.height >= elemento_1.y + elemento_1.height) {
+        if (element_2.x <= element_1.x && element_2.x + element_2.width >= element_1.x + element_1.width) {
+            if (element_2.y <= element_1.y && element_2.y + element_2.height >= element_1.y + element_1.height) {
                 hit = true;
             }
         }
 
-        if (elemento_1.x <= elemento_2.x && elemento_1.x + elemento_1.width >= elemento_2.x + elemento_2.width) {
-            if (elemento_1.y <= elemento_2.y && elemento_1.y + elemento_1.height >= elemento_2.y + elemento_2.height) {
+        if (element_1.x <= element_2.x && element_1.x + element_1.width >= element_2.x + element_2.width) {
+            if (element_1.y <= element_2.y && element_1.y + element_1.height >= element_2.y + element_2.height) {
                 hit = true;
             }
         }
@@ -134,15 +148,17 @@
      * @param {*} height Alto de la paleta
      * @param {*} board Ventana del juego
      */
-    self.Paddle = function (x, y, width, height, board) {
+    self.Paddle = function (x, y, width, height, board, color = "#000000", opacity = 1) {
         this.x = x;
         this.y = y;
         this.width = width;
         this.height = height;
         this.board = board;
+        this.color = color;
+        this.opacity = opacity;
         this.kind = "rectangle";
         this.board.paddles.push(this);
-        this.speed = 10;
+        this.speed = 50;
     }
 
     self.Paddle.prototype = {
@@ -177,40 +193,60 @@
         this.y = y;
         this.radius = radius;
         this.collider = new Collider(this);
+        this.speed_x = 5;
         this.speed_y = 0;
-        this.speed_x = 3;
         this.speed = this.speed_x + this.speed_y;
+        this.direction_x = this.determinate_direction(this.speed_x);
+        this.direction_y = this.determinate_direction(this.speed_y);
+        this.bounceAngle = 0;
+        this.maxBounceAngle = Math.PI / 12;
         this.board = board;
         board.ball = this;
         this.kind = "circle";
-        this.direction = -1;
-        this.bounceAngle = 0;
-        this.maxBounceAngle = Math.PI / 12;
     }
 
     self.Ball.prototype = {
         move: function () {
-            this.x += this.speed_x * this.direction;
-            this.y += this.speed_y * this.direction;
+            this.x += this.speed_x * this.direction_x;
+            this.y += this.speed_y * this.direction_y;
+            
         },
-        collision: function (paddle) {
+        collision_paddle: function (paddle) {
+            
             let relativeIntersectY = (paddle.y + (paddle.height / 2)) - this.y;
             let normalizedIntersectY = relativeIntersectY / (paddle.height / 2);
             this.bounceAngle = normalizedIntersectY * this.maxBounceAngle;
             this.speed_y = this.speed * -Math.sin(this.bounceAngle);
+            this.direction_y = this.determinate_direction(this.speed_y);
+            this.speed_y = Math.abs(this.speed_y); 
             this.speed_x = this.speed * Math.cos(this.bounceAngle);
+            
             if (this.x > (this.board.width / 2)) {
-                this.direction = -1;
+                this.direction_x = -1;
             } else {
-                this.direction = 1;
+                this.direction_x = 1;
             }
+        },
+        collision_limit: function (limit) {
+            
+            if (this.y < (this.board.height / 2)) {
+                this.direction_y = 1;
+            } else {
+                
+                this.direction_y = -1;
+            }
+        },
+        determinate_direction: function(speed) {
+            if(speed == 0) return 0;
+            else if(speed > 0) return 1;
+            else if(speed < 0) return -1;
         }
     }
 
-    self.Collider = function(ball) {
+    self.Collider = function (ball) {
         this.ball = ball;
     }
-    
+
     self.Collider.prototype = {
         get width() {
             return this.ball.radius * 2.1
@@ -228,6 +264,29 @@
 
 })();
 
+(function () {
+    /**
+     * Elemento limite del juego
+     * @param {*} x Ubicación del limite en el eje x
+     * @param {*} y Ubicación del limite en el eje y
+     * @param {*} width Ancho del limite
+     * @param {*} height Alto del limite
+     * @param {*} board Ventana del juego
+     */
+    self.Limit = function (x, y, width, height, board, color = "#ffffff", opacity = 0) {
+        this.x = x;
+        this.y = y;
+        this.width = width;
+        this.height = height;
+        this.board = board;
+        this.color = color;
+        this.opacity = opacity;
+        this.kind = "rectangle";
+        this.board.limits.push(this);
+        this.speed = 10;
+    }
+})();
+
 // Inicialización de variables
 window.addEventListener("load", main);
 var board;
@@ -235,6 +294,8 @@ var canvas;
 var board_view;
 var paddle_1;
 var paddle_2;
+var upper_limit;
+var lower_limit;
 
 function main() {
     board = new Board(800, 600);
@@ -245,8 +306,12 @@ function main() {
     let paddle_width = 20;
     let paddle_x = board.width - paddle_width * 2;
     let paddle_y = board.height / 2 - paddle_height / 2;
-    paddle_1 = new Paddle(paddle_width, paddle_y, paddle_width, paddle_height, board);
-    paddle_2 = new Paddle(paddle_x, paddle_y, paddle_width, paddle_height, board);
+    paddle_1 = new Paddle(paddle_width, paddle_y, paddle_width, paddle_height, board, "#D92217");
+    paddle_2 = new Paddle(paddle_x, paddle_y, paddle_width, paddle_height, board, "#171DD9");
+
+    let limit_height = 1;
+    upper_limit = new Limit(0, 0, board.width, limit_height, board, "#000000", 0);
+    lower_limit = new Limit(0, board.height - limit_height, board.width, limit_height, board, "#000000", 0);
 
     let ball_radius = 10;
     var ball = new Ball(board.width / 2 - ball_radius, board.height / 2 - ball_radius, ball_radius, board)
