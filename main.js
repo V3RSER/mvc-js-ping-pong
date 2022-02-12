@@ -176,14 +176,11 @@
          * Desplaza la paleta hacia abajo
          */
         up: function () {
-            
             if (this.y - this.speed > this.board.limits[0].y + this.board.limits[0].height) {
                 this.y -= this.speed;
             } else {
                 this.y = this.board.limits[0].y + this.board.limits[0].height;
             }
-
-            console.log(this + "");
         },
         toString: function () {
             return "x: " + this.x + " y: " + this.y;
@@ -205,7 +202,7 @@
         this.radius = radius;
         this.collider = new Collider(this);
         this.speed_x = 5;
-        this.speed_y = -5;
+        this.speed_y = 0;
         this.speed = this.speed_x + this.speed_y;
         this.direction_x = this.determinate_direction(this.speed_x);
         this.direction_y = this.determinate_direction(this.speed_y);
