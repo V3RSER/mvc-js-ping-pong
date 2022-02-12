@@ -166,13 +166,24 @@
          * Desplaza la paleta hacia arriba
          */
         down: function () {
-            this.y += this.speed;
+            if (this.y + this.height + this.speed < this.board.limits[1].y ) {
+                this.y += this.speed;
+            } else {
+                this.y = this.board.limits[1].y - this.height;
+            }
         },
         /**
          * Desplaza la paleta hacia abajo
          */
         up: function () {
-            this.y -= this.speed;
+            
+            if (this.y - this.speed > this.board.limits[0].y + this.board.limits[0].height) {
+                this.y -= this.speed;
+            } else {
+                this.y = this.board.limits[0].y + this.board.limits[0].height;
+            }
+
+            console.log(this + "");
         },
         toString: function () {
             return "x: " + this.x + " y: " + this.y;
@@ -194,7 +205,7 @@
         this.radius = radius;
         this.collider = new Collider(this);
         this.speed_x = 5;
-        this.speed_y = 0;
+        this.speed_y = -5;
         this.speed = this.speed_x + this.speed_y;
         this.direction_x = this.determinate_direction(this.speed_x);
         this.direction_y = this.determinate_direction(this.speed_y);
@@ -209,18 +220,17 @@
         move: function () {
             this.x += this.speed_x * this.direction_x;
             this.y += this.speed_y * this.direction_y;
-            
+
         },
         collision_paddle: function (paddle) {
-            
             let relativeIntersectY = (paddle.y + (paddle.height / 2)) - this.y;
             let normalizedIntersectY = relativeIntersectY / (paddle.height / 2);
             this.bounceAngle = normalizedIntersectY * this.maxBounceAngle;
             this.speed_y = this.speed * -Math.sin(this.bounceAngle);
             this.direction_y = this.determinate_direction(this.speed_y);
-            this.speed_y = Math.abs(this.speed_y); 
+            this.speed_y = Math.abs(this.speed_y);
             this.speed_x = this.speed * Math.cos(this.bounceAngle);
-            
+
             if (this.x > (this.board.width / 2)) {
                 this.direction_x = -1;
             } else {
@@ -228,18 +238,16 @@
             }
         },
         collision_limit: function (limit) {
-            
             if (this.y < (this.board.height / 2)) {
                 this.direction_y = 1;
             } else {
-                
                 this.direction_y = -1;
             }
         },
-        determinate_direction: function(speed) {
-            if(speed == 0) return 0;
-            else if(speed > 0) return 1;
-            else if(speed < 0) return -1;
+        determinate_direction: function (speed) {
+            if (speed == 0) return 0;
+            else if (speed > 0) return 1;
+            else if (speed < 0) return -1;
         }
     }
 
@@ -283,7 +291,6 @@
         this.opacity = opacity;
         this.kind = "rectangle";
         this.board.limits.push(this);
-        this.speed = 10;
     }
 })();
 
@@ -309,7 +316,7 @@ function main() {
     paddle_1 = new Paddle(paddle_width, paddle_y, paddle_width, paddle_height, board, "#D92217");
     paddle_2 = new Paddle(paddle_x, paddle_y, paddle_width, paddle_height, board, "#171DD9");
 
-    let limit_height = 1;
+    let limit_height = 2;
     upper_limit = new Limit(0, 0, board.width, limit_height, board, "#000000", 0);
     lower_limit = new Limit(0, board.height - limit_height, board.width, limit_height, board, "#000000", 0);
 
